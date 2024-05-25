@@ -1,0 +1,56 @@
+.data-display-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.data-container, .table-container {
+    width: 45%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.data-container {
+    overflow-y: auto;
+    max-height: 400px;
+}
+
+.person-table, .custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+}
+
+.person-table td, .custom-table th, .custom-table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+}
+
+.table-container {
+    margin-top: 10px;
+}
+
+.custom-table input[type="text"], .custom-table button {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.custom-table button {
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.custom-table button:hover {
+    background-color: #45a049;
+}
+
+.error-message {
+    color: red;
+    font-weight: bold;
+    margin-top: 10px;
+}
