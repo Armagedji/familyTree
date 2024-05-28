@@ -83,7 +83,7 @@ function PersonForm({ initialPerson, onCancel, onUpdateSuccess }) {
                 <div key={index}>
                     <input
                         type="text"
-                        value={profession.name}
+                        value={profession}
                         onChange={(e) => handleProfessionChange(e, index)}
                         placeholder={`Профессия ${index + 1}`}
                     />

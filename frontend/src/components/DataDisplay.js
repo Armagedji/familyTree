@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './DataDisplay.css'; // стилизация компонента
-import PersonForm from './PersonForm'; // Подключаем компонент формы редактирования
+import EditForm from './EditForm'; // Подключаем компонент формы редактирования
 
 function DataDisplay() {
     const [personData, setPersonData] = useState({});
@@ -61,9 +61,10 @@ function DataDisplay() {
     };
 
     const handleUpdateSuccess = (updatedPerson) => {
-        setPersonData(updatedPerson);
+        setPersonData(updatedPerson["person_id"]);
         setEditMode(false);
         setEditPerson(null);
+        fetchData(updatedPerson['person_id']);
     };
 
     const resetState = () => {
@@ -139,7 +140,7 @@ function DataDisplay() {
             )}
 
             {editMode && (
-                <PersonForm initialPerson={editPerson} onCancel={handleCancelEdit}
+                <EditForm initialPerson={editPerson} onCancel={handleCancelEdit}
                             onUpdateSuccess={handleUpdateSuccess}/>
             )}
 

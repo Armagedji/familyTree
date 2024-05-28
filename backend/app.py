@@ -93,6 +93,36 @@ def add_person():
     print(data['residences'])
 
 
+@app.route('/api/edit/<search_id>', methods=['PUT'])
+def edit_person(search_id):
+    nested = db.session.begin_nested()
+    try:
+        nested = db.session.begin_nested()
+        data = request.json
+        educations = data.pop('educations')
+        professions = data.pop('professions')
+        residences = data.pop('residences')
+        user_id = 1
+        person = db.session.query(Person).get(search_id)
+        print("До: ", person.professions)
+        db.session.query(Profession).filter(Profession.person_id == search_id).delete()
+        db.session.query(Education).filter(Education.person_id == search_id).delete()
+        db.session.commit()
+        print("После: ", person.professions)
+        print("professions:", professions)
+        for key, value in data.items():
+            setattr(person, key, value)
+        for i in professions:
+            db.session.add(Profession(profession=i, person_id=person.person_id))
+        for i in educations:
+            db.session.add(Education(education=i, person_id=person.person_id))
+        db.session.commit()
+        return jsonify({'message': "Все ок!", 'person_id': search_id}), 201
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'error': str(type(e))}), 500
+
 @app.route('/setuser', methods=['POST'])
 def add_user():
     try:
@@ -139,6 +169,7 @@ def search_persons(category, query):
             persons = Person.query.filter(
                 (Person.first_name.contains(query)) |
                 (Person.surname.contains(query)) |
+                (Person.maiden_name.contains(query)) |
                 (Person.patronymic.contains(query))
             ).all()
         elif category == 'birth_place':
