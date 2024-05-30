@@ -9,48 +9,42 @@ import UserTable from "./components/UserTable";
 import ProfessionForm from "./components/ProfessionForm";
 import DataDisplay from "./components/DataDisplay";
 import RelationshipForm from "./components/RelationshipForm";
+import LoginForm from "./components/LoginForm";
 
 
 function App() {
-    const [users, setUsers] = useState(null);
+    const [userId, setUserId] = useState(null);
     const [persons, setPersons] = useState(null);
 
-    const refreshUser = () => {
-        axios.get('http://127.0.0.1:5000/getuser')
-            .then((h) => {
-                setUsers(h.data);
-            })
-            .catch((err) => {console.log(err)});
-    }
+    const handleLogin = async (userId) => {
+        setUserId(userId); // Обновляем user_id при успешном входе
+        const result = await axios.get(`http://127.0.0.1:5000/api/getpersons/${userId}`);
+        setPersons(result.data);
+    };
 
     return (
-
         <div className="App" align="left">
-            <div align="center" className="one">
-                <h2>Регистрация</h2>
+            {!userId ? (<div>
                 <UserForm/>
-            </div>
-            <div className="two" align="center">
-                <h3>Таблица пользователей</h3>
-                <button onClick={refreshUser}>Обновить</button>
-                {users == null ? "Без таблицы" : <UserTable name={users}/>}
-            </div>
-            <div align="center" className="three">
-                <h3>Регистрация человека</h3>
-                <PersonInfo people={persons}/>
-            </div>
-            {/*
-                <div align="center" className="four-old">
-                    <h3>Таблица зарегистрированных людей</h3>
-                    <button onClick={refreshPersons}>Обновить таблицу</button>
-                    {persons == null ? "Таблицы нет" : <PersonTable name={persons}/>}
-                </div>*/}
-            <div className="four">
-                {<DataDisplay/>}
-            </div>
-            <div className="five">
-                <RelationshipForm />
-            </div>
+                <LoginForm user_id={handleLogin} />
+                </div>
+            ) : (
+                <div>
+                    <h1>Добро пожаловать!</h1>
+                    <p>Ваш user_id: {userId}</p>
+                    <div align="center" className="three">
+                        <h3>Регистрация человека</h3>
+                        <PersonInfo user_id={userId}/>
+                    </div>
+                    <div className="four">
+                        {<DataDisplay user_id={userId}/>}
+                        { persons ?
+                        <RelationshipForm user_id={userId} persons={persons}/>
+                            : <div> Данные еще не были получены </div>
+                        }
+                    </div>
+                </div>
+            )}
         </div>
 
     );

@@ -3,7 +3,7 @@ import axios from 'axios';
 import './DataDisplay.css'; // стилизация компонента
 import EditForm from './EditForm'; // Подключаем компонент формы редактирования
 
-function DataDisplay() {
+function DataDisplay(props) {
     const [personData, setPersonData] = useState({});
     const [errorMessage, setErrorMessage] = useState('');
     const [searchCategory, setSearchCategory] = useState('name');
@@ -12,6 +12,14 @@ function DataDisplay() {
     const [selectedPerson, setSelectedPerson] = useState(null);
     const [editMode, setEditMode] = useState(false); // Состояние для отслеживания редактирования
     const [editPerson, setEditPerson] = useState(null); // Состояние для хранения данных редактируемой персоны
+    const [imageUrl, setImageUrl] = useState('http://127.0.0.1:5000/api/picture');
+
+  const handleRefreshClick = () => {
+    // Генерируем случайное число, чтобы избежать кеширования изображения
+    const randomNumber = Math.random();
+    const newImageUrl = `http://127.0.0.1:5000/api/picture?rand=${randomNumber}`;
+    setImageUrl(newImageUrl);
+  };
 
     useEffect(() => {
         if (selectedPerson) {
@@ -34,7 +42,7 @@ function DataDisplay() {
 
     const handleSearch = async () => {
         try {
-            const response = await axios.get(`http://127.0.0.1:5000/api/search/${searchCategory}/${searchQuery}`);
+            const response = await axios.get(`http://127.0.0.1:5000/api/search/${props.user_id}/${searchCategory}/${searchQuery}`);
             console.log("Результаты поиска: ", response.data);
             setSearchResults(response.data);
             setErrorMessage('');
@@ -67,6 +75,15 @@ function DataDisplay() {
         fetchData(updatedPerson['person_id']);
     };
 
+    const getPicture = async () => {
+        console.log("1");
+        const response = await axios.get('http://127.0.0.1:5000/api/picture')
+            .then(data => {
+        // Установка URL изображения в состояние
+      })
+      .catch(error => console.error('Fetch error:', error));
+    }
+
     const resetState = () => {
         setPersonData({});
         setErrorMessage('');
@@ -87,7 +104,8 @@ function DataDisplay() {
                         <option value="residences">Место жительства</option>
                     </select>
                 </label>
-                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Введите запрос" />
+                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                       placeholder="Введите запрос"/>
                 <button onClick={handleSearch}>Поиск</button>
             </div>
 
@@ -131,7 +149,8 @@ function DataDisplay() {
                     <p>Места жительства:</p>
                     <ul>
                         {personData.residences && personData.residences.map((residence, index) => (
-                            <li key={index}>Страна: {residence.country} | Город: {residence.city} | Адрес: {residence.street+" "+residence.house+", "+residence.apartment+" | "}
+                            <li key={index}>Страна: {residence.country} | Город: {residence.city} |
+                                Адрес: {residence.street + " " + residence.house + ", " + residence.apartment + " | "}
                                 Дата проживания: {residence.start_date} -- {residence.end_date}</li>
                         ))}
                     </ul>
@@ -141,12 +160,16 @@ function DataDisplay() {
 
             {editMode && (
                 <EditForm initialPerson={editPerson} onCancel={handleCancelEdit}
-                            onUpdateSuccess={handleUpdateSuccess}/>
+                          onUpdateSuccess={handleUpdateSuccess}/>
             )}
 
             <button onClick={resetState}>Очистить</button>
             \
-            <button onClick={() => console.log(personData)}>Инфа</button>
+            <button onClick={getPicture}>Получить изображение</button>
+            <div>
+                <img src={imageUrl} alt="Image"/>
+                <button onClick={handleRefreshClick}>Refresh Image</button>
+            </div>
         </div>
     );
 }

@@ -34,6 +34,8 @@ function UserForm() {
 
 
     return (
+        <div>
+        <h2>Регистрация</h2>
         <form onSubmit={handleSubmit}>
             <label> Логин: <input type="text" name="username" value={user.username} onChange={handleChange}/></label>
             <br/>
@@ -43,6 +45,7 @@ function UserForm() {
             <br/>
             <input type="submit" value="Зарегистрироваться"/>
         </form>
+    </div>
     );
 }
 

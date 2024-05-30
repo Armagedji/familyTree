@@ -4,6 +4,7 @@ import "./PersonInfo.css";
 
 function PersonInfo(props) {
     const [person, setPerson] = useState({
+        user_id: props.user_id,
         surname: '',
         maiden_name: '',
         first_name: '',

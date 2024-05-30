@@ -1,10 +1,11 @@
 import sqlalchemy
-from flask import Flask, request, jsonify
+from sqlalchemy.orm import joinedload
+from flask import Flask, request, jsonify, send_file
 from flask_restful import fields, marshal_with
 from flask_cors import CORS
 from models import db, User, Person, Education, Profession, Residence, Relation
 import traceback
-from datetime import datetime
+import graphviz
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///geneologicTree.db'
@@ -28,9 +29,8 @@ person_fields = {'person_id': fields.Integer, 'user_id': fields.Integer, 'surnam
 
 @app.route('/api/setperson', methods=['POST'])
 def add_person():
-    print('1')
     data = request.json
-    user_id = 1
+    user_id = data['user_id']
     nested = db.session.begin_nested()
     try:
         new_person = Person(
@@ -116,10 +116,68 @@ def edit_person(search_id):
             db.session.add(Profession(profession=i, person_id=person.person_id))
         for i in educations:
             db.session.add(Education(education=i, person_id=person.person_id))
+        for i in residences:
+            db.session.add(Residence(country=i['country'], city=i['city'], street=i['street'],
+                                     house=i['house'], apartment=i['apartment'],
+                                     start_date=i['start_date'], end_date=i['end_date'],
+                                     person_id=person.person_id))
         db.session.commit()
         return jsonify({'message': "Все ок!", 'person_id': search_id}), 201
     except Exception as e:
         db.session.rollback()
+        print(e)
+        return jsonify({'error': str(type(e))}), 500
+
+
+@app.route('/api/picture', methods=['GET'])
+def send_picture():
+    try:
+        data = db.session.query(Relation).options(joinedload(Relation.person),
+                                                  joinedload(Relation.related_person)).all()
+
+        # Сериализуем данные, включая имена людей
+        serialized_data = [
+            {
+                'relation_id': relation.relation_id,
+                'person_id': relation.person_id,
+                'related_person_id': relation.related_person_id,
+                'relationship_type': relation.relationship_type,
+                'person_name': f'{relation.person.first_name} {relation.person.surname}',  # Добавляем имя person
+                'related_person_name': f'{relation.related_person.first_name} {relation.related_person.surname}'# Добавляем имя related_person
+            }
+            for relation in data
+        ]
+        persons = set()
+        for relation in serialized_data:
+            persons.add(relation['person_id'])  # person_id
+            persons.add(relation['related_person_id'])  # related_person_id
+
+        d = graphviz.Digraph(format='png')
+
+        for item in serialized_data:
+            person_id = item['person_id']
+            related_person_id = item['related_person_id']
+            relationship_type = item['relationship_type']
+            person_name = item['person_name']
+            related_person_name = item['related_person_name']
+            if relationship_type == 'siblings':
+                with d.subgraph() as s:
+                    s.attr(rank='same')
+                    s.node(str(person_id), person_name)
+                    s.node(str(related_person_id), related_person_name)
+            elif relationship_type == 'spouse':
+                with d.subgraph() as s:
+                    s.attr(rank='same')
+                    s.node(str(person_id), person_name)
+                    s.node(str(related_person_id), related_person_name)
+                d.edge(str(person_id), str(related_person_id), arrowhead='none', color = "black:invis:black")
+            else:
+                d.node(str(person_id), person_name)
+                d.edge(str(person_id), str(related_person_id))
+
+        d.render(directory='doctest-output')
+        return send_file('./doctest-output/Digraph.gv.png', mimetype='image/png')
+    except Exception as e:
         print(e)
         return jsonify({'error': str(type(e))}), 500
 
@@ -141,32 +199,52 @@ def add_user():
         print(e)
         return str(e)
 
+@app.route('/api/login', methods=['POST'])
+def return_user():
+    try:
+        data = request.json
+        print(data)
+        first_query = db.session.query(User).filter(
+            User.username.like(data['usernameOrEmail']),
+            User.password.like(data['password']),
+        ).first()
+        second_query = db.session.query(User).filter(
+            User.email.like(data['usernameOrEmail']),
+            User.password.like(data['password']),
+        ).first()
+        print(first_query, second_query)
+
+        if first_query and second_query:
+            return jsonify({'message': 'Пользователь не найден'}), 400
+        elif first_query:
+            return jsonify({'message': 'Успешный вход!', 'user': first_query.user_id}), 200
+        return jsonify({'message': 'Успешный вход!', 'user': second_query.user_id}), 200
+
+    except Exception as e:
+        print(e)
+        return str(e)
+
 
 @app.route('/api/setrelationship', methods=['POST'])
 def set_relationship():
     try:
         data = request.json
-        sex1 = Person.query.get(int(data['person1'])).sex
-        sex2 = Person.query.get(int(data['person2'])).sex
-        relationship1 = Relation(person_id=data['person1'],
+        relationship = Relation(person_id=data['person1'],
                                  related_person_id=data['person2'],
-                                 relationship_id=2 * int(data['relationship']) - sex1)
-        relationship2 = Relation(person_id=data['person2'],
-                                 related_person_id=data['person1'],
-                                 relationship_id=2 * int(data['relationship']) - sex2)
-        db.session.add(relationship1)
-        db.session.add(relationship2)
+                                 relationship_type=data['relationship'])
+        db.session.add(relationship)
         db.session.commit()
         return jsonify({'message': 'Relationship was created!'}), 201
     except Exception as e:
         return jsonify({"error": e}), 500
 
 
-@app.route('/api/search/<category>/<query>', methods=['GET'])
-def search_persons(category, query):
+@app.route('/api/search/<user_id>/<category>/<query>', methods=['GET'])
+def search_persons(user_id, category, query):
     try:
         if category == 'name':
             persons = Person.query.filter(
+                Person.user_id == user_id,
                 (Person.first_name.contains(query)) |
                 (Person.surname.contains(query)) |
                 (Person.maiden_name.contains(query)) |
@@ -174,12 +252,14 @@ def search_persons(category, query):
             ).all()
         elif category == 'birth_place':
             persons = Person.query.filter(
+                Person.user_id == user_id,
                 (Person.birth_country.contains(query)) |
                 (Person.birth_city.contains(query)) |
                 (Person.birth_street.contains(query))
             ).all()
         elif category == 'residences':
             persons = Person.query.join(Residence).filter(
+                Person.user_id == user_id,
                 (Residence.country.contains(query)) |
                 (Residence.city.contains(query)) |
                 (Residence.street.contains(query))
@@ -198,11 +278,15 @@ def search_persons(category, query):
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/getperson', methods=['GET'])
+@app.route('/api/getpersons/<user_id>', methods=['GET'])
 @marshal_with(person_fields)
-def return_persons():
-    persons = Person.query.all()
-    return persons
+def return_persons(user_id):
+    print(user_id)
+    persons = (Person.query.filter_by(user_id = int(user_id))).all()
+    print(persons)
+    serialized_persons = [person.to_dict() for person in persons]
+    print(serialized_persons)
+    return serialized_persons
 
 
 @app.route('/api/getperson/<person_id>', methods=['GET'])

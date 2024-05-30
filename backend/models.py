@@ -73,7 +73,18 @@ class Relation(db.Model):
     relation_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     person_id = db.Column(db.Integer, db.ForeignKey('persons.person_id'), nullable=False)
     related_person_id = db.Column(db.Integer, db.ForeignKey('persons.person_id'), nullable=False)
-    relationship_id = db.Column(db.Integer, db.ForeignKey('relationship_types.relationship_id'), nullable=False)
+    relationship_type = db.Column(db.String, nullable=False)
+
+    person = db.relationship('Person', foreign_keys=[person_id])
+    related_person = db.relationship('Person', foreign_keys=[related_person_id])
+
+    def to_dict(self):
+        return {
+            'relation_id': self.relation_id,
+            'person_id': self.person_id,
+            'related_person_id': self.related_person_id,
+            'relationship_type': self.relationship_type
+        }
 
 
 class Relationship_type(db.Model):

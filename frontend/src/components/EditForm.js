@@ -61,6 +61,44 @@ function EditForm({ initialPerson, onCancel, onUpdateSuccess }) {
         });
     };
 
+    const handleResidenceChange = (e, index) => {
+        const { name, value } = e.target;
+        const newResidences = [...person.residences];
+        newResidences[index] = {
+            ...newResidences[index],
+            [name]: value
+        };
+        setPerson({
+            ...person,
+            residences: newResidences
+        });
+        console.log(person.residences);
+    };
+
+    const addResidence = () => {
+        setPerson({
+            ...person,
+            residences: [...person.residences, {
+                country: '',
+                city: '',
+                street: '',
+                house: '',
+                apartment: '',
+                start_date: '',
+                end_date: ''
+            }]
+        });
+    };
+
+    const removeResidence = (index) => {
+        const newResidences = [...person.residences];
+        newResidences.splice(index, 1);
+        setPerson({
+            ...person,
+            residences: newResidences
+        });
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         axios.put(`http://127.0.0.1:5000/api/edit/${person['person_id']}`, person)
@@ -147,19 +185,66 @@ function EditForm({ initialPerson, onCancel, onUpdateSuccess }) {
             ))}
             <button type="button" onClick={addEducation}>Добавить образование</button>
 
-            <h3>Профессии:</h3>
-            {person.professions.map((profession, index) => (
-                <div key={index}>
+            <h3>Места жительства:</h3>
+            {person.residences.map((residence, index) => (
+                <div key={residence.id} className="residence-item">
                     <input
                         type="text"
-                        value={profession}
-                        onChange={(e) => handleProfessionChange(e, index)}
-                        placeholder={`Профессия ${index + 1}`}
+                        name="country"
+                        value={residence.country}
+                        onChange={(e) => handleResidenceChange(e, index)}
+                        placeholder="Страна"
                     />
-                    <button type="button" onClick={() => removeProfession(index)}>Удалить</button>
+                    <input
+                        type="text"
+                        name="city"
+                        value={residence.city}
+                        onChange={(e) => handleResidenceChange(e, index)}
+                        placeholder="Город"
+                    />
+                    <input
+                        type="text"
+                        name="street"
+                        value={residence.street}
+                        onChange={(e) => handleResidenceChange(e, index)}
+                        placeholder="Улица"
+                    />
+                    <input
+                        type="text"
+                        name="house"
+                        value={residence.house}
+                        onChange={(e) => handleResidenceChange(e, index)}
+                        placeholder="Дом"
+                    />
+                    <input
+                        type="text"
+                        name="apartment"
+                        value={residence.apartment}
+                        onChange={(e) => handleResidenceChange(e, index)}
+                        placeholder="Квартира"
+                    />
+                    {/* Добавлено пояснение к полю даты начала проживания */}
+                    <input
+                        type="date"
+                        name="start_date"
+                        value={residence.start_date}
+                        onChange={(e) => handleResidenceChange(e, index)}
+                        placeholder="Дата начала (гггг-мм-дд)"
+                        title="Введите дату начала проживания"
+                    />
+                    {/* Добавлено пояснение к полю даты окончания проживания */}
+                    <input
+                        type="date"
+                        name="end_date"
+                        value={residence.end_date}
+                        onChange={(e) => handleResidenceChange(e, index)}
+                        placeholder="Дата окончания (гггг-мм-дд)"
+                        title="Введите дату окончания проживания. Оставьте поле пустым, если проживание продолжается"
+                    />
+                    <button type="button" onClick={() => removeResidence(index)}>Удалить</button>
                 </div>
             ))}
-            <button type="button" onClick={addProfession}>Добавить профессию</button>
+            <button type="button" onClick={addResidence}>Добавить место жительства</button>
 
             <button type="submit">Сохранить</button>
             <button type="button" onClick={onCancel}>Отмена</button>
