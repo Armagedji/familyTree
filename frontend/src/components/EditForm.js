@@ -6,10 +6,15 @@ function EditForm({ initialPerson, onCancel, onUpdateSuccess }) {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
+        console.log(name, value, type, checked);
+        if (type === 'radio') {
+            setPerson({...person, ['sex']: value})
+        console.log(person['sex']);
+        } else {
         setPerson({
             ...person,
             [name]: type === 'checkbox' ? checked : value === "" ? null : value
-        });
+        }); }
     };
 
     const handleProfessionChange = (e, index) => {
@@ -112,6 +117,17 @@ function EditForm({ initialPerson, onCancel, onUpdateSuccess }) {
             });
     };
 
+    const handleDeletePerson = () => {
+        axios.delete(`http://127.0.0.1:5000/api/delete/${person['person_id']}`)
+            .then(response => {
+                console.log('Person deleted:', response.data);
+                onUpdateSuccess(null); // Передаем null, чтобы указать удаление
+            })
+            .catch(error => {
+                console.error('There was an error deleting the person!', error);
+            });
+    };
+
     return (
         <form onSubmit={handleSubmit}>
             <input type="text" name="surname" value={person.surname} onChange={handleChange} placeholder="Фамилия"
@@ -122,6 +138,8 @@ function EditForm({ initialPerson, onCancel, onUpdateSuccess }) {
                    required/><br/>
             <input type="text" name="patronymic" value={person.patronymic} onChange={handleChange}
                    placeholder="Отчество"/><br/>
+            Пол:<input type="radio" name="sex" value={0} onChange={handleChange}/> Мужской
+            <input type="radio" name="sex" value={1} onChange={handleChange}/> Женский <br/> <br/> <br/>
             Дата рождения
             <input type="date" name="birth_date" value={person.birth_date} onChange={handleChange}
                    placeholder="Дата рождения"/><br/>
@@ -248,6 +266,7 @@ function EditForm({ initialPerson, onCancel, onUpdateSuccess }) {
 
             <button type="submit">Сохранить</button>
             <button type="button" onClick={onCancel}>Отмена</button>
+            <button type="button" onClick={handleDeletePerson}>Удалить</button>
         </form>
     );
 }

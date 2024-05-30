@@ -12,15 +12,15 @@ digraph {
 	5 -> 1
 	{
 		rank=same
-		6 [label="Владимир Афонин"]
-		5 [label="Ольга Игошева"]
-	}
-	{
-		rank=same
 		5 [label="Ольга Игошева"]
 		7 [label="Леонид Игошев"]
 	}
 	5 -> 7 [arrowhead=none color="black:invis:black"]
 	2 [label="Булат Будяшкин"]
 	2 -> 4
+	{
+		rank=same
+		5 [label="Ольга Игошева"]
+		9 [label="Владимир Афонин"]
+	}
 }

@@ -1,11 +1,14 @@
 import sqlalchemy
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, contains_eager
 from flask import Flask, request, jsonify, send_file
 from flask_restful import fields, marshal_with
 from flask_cors import CORS
 from models import db, User, Person, Education, Profession, Residence, Relation
 import traceback
 import graphviz
+import sqlite3
+from sqlalchemy.orm import aliased
+import os, glob
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///geneologicTree.db'
@@ -92,6 +95,203 @@ def add_person():
         nested.rollback()
     print(data['residences'])
 
+@app.route('/api/delete/<person_id>', methods=['DELETE'])
+def delete_person(person_id):
+    try:
+        # Удаление записей из таблицы Residence
+        Residence.query.filter_by(person_id=person_id).delete()
+
+        # Удаление записей из таблицы Profession
+        Profession.query.filter_by(person_id=person_id).delete()
+
+        # Удаление записей из таблицы Education
+        Education.query.filter_by(person_id=person_id).delete()
+
+        # Удаление записей из таблицы Relation
+        Relation.query.filter_by(person_id=person_id).delete()
+        Relation.query.filter_by(related_person_id=person_id).delete()
+
+        # Удаление записей из таблицы Person
+        Person.query.filter_by(person_id=person_id).delete()
+
+        db.session.commit()
+
+        return jsonify({'message': 'Person and related data deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Failed to delete person and related data', 'error': str(e)}), 500
+
+@app.route('/api/get/table', methods=['GET'])
+def get_table():
+    try:
+        conn = sqlite3.connect('./instance/geneologicTree.db')
+        cursor = conn.cursor()
+
+        # Запрос с рекурсивной CTE для FamilyTree
+        recursive_query = """WITH RECURSIVE FamilyTree AS (
+    -- Base case: выбираем изначального человека
+    SELECT
+        0 AS level,
+        p.person_id,
+        p.first_name,
+        p.surname,
+		p.sex,
+        NULL AS relationship_type
+    FROM Persons p
+    WHERE p.is_primary_contact = 1
+
+    UNION ALL
+
+    -- Recursive case: выбираем родителей и детей
+    SELECT
+        ft.level + 1 AS level,
+        p.person_id,
+        p.first_name,
+        p.surname,
+		p.sex,
+        r.relationship_type
+    FROM Relations r
+    JOIN Persons p ON r.related_person_id = p.person_id
+    JOIN FamilyTree ft ON r.person_id = ft.person_id
+	WHERE r.relationship_type = 'parent-child'
+	
+
+), FamilyTree1 AS (
+    -- Base case: выбираем изначального человека
+    SELECT
+        0 AS level,
+        p.person_id,
+        p.first_name,
+        p.surname,
+		p.sex,
+        NULL AS relationship_type
+    FROM Persons p
+    WHERE p.is_primary_contact = 1
+
+    UNION ALL
+
+    -- Recursive case: выбираем супругов и братьев/сестер
+    SELECT
+        ft.level - 1 AS level,
+        p.person_id,
+        p.first_name,
+        p.surname,
+		p.sex,
+        r.relationship_type
+    FROM Relations r
+    JOIN Persons p ON r.person_id = p.person_id
+    JOIN FamilyTree1 ft ON r.related_person_id = ft.person_id
+	WHERE r.relationship_type = 'parent-child'
+	
+	UNION ALL
+
+    -- Recursive case: выбираем супругов и братьев/сестер
+    SELECT
+        ft.level AS level,
+        p.person_id,
+        p.first_name,
+        p.surname,
+		p.sex,
+        r.relationship_type
+    FROM Relations r
+    JOIN Persons p ON r.related_person_id = p.person_id
+    JOIN FamilyTree1 ft ON r.person_id = ft.person_id
+	WHERE r.relationship_type = 'siblings'
+	
+	UNION ALL
+	
+	SELECT
+        ft.level AS level,
+        p.person_id,
+        p.first_name,
+        p.surname,
+		p.sex,
+        r.relationship_type
+    FROM Relations r
+    JOIN Persons p ON r.related_person_id = p.person_id
+    JOIN FamilyTree1 ft ON r.person_id = ft.person_id
+	WHERE r.relationship_type = 'spouse'
+)
+
+-- Итоговый запрос, который форматирует результат
+SELECT
+    ft.level AS "Уровень родственной иерархии",
+    p.surname || ' ' || p.first_name || COALESCE(' ' || p.patronymic, '') || 
+    CASE 
+        WHEN p.maiden_name IS NOT NULL AND p.maiden_name != '' THEN ' (' || p.maiden_name || ')' 
+        ELSE '' 
+    END AS "ФИО (ФИО до замужества)",
+	CASE
+		WHEN ft.level = 0 AND ft.relationship_type IS NULL THEN 'Обратившийся'
+		WHEN ft.level = 0 AND ft.relationship_type = 'siblings' AND p.sex = 0 THEN 'Брат'
+		WHEN ft.level = 0 AND ft.relationship_type = 'siblings' AND p.sex = 1 THEN 'Сестра'
+		WHEN ft.level = 0 AND ft.relationship_type = 'spouse' AND p.sex = 0 THEN 'Муж'
+		WHEN ft.level = 0 AND ft.relationship_type = 'spouse' AND p.sex = 1 THEN 'Жена'
+        WHEN ft.level = -1 AND ft.relationship_type != 'siblings' THEN 'Родитель'
+		WHEN ft.level = -1 AND ft.relationship_type = 'siblings' AND p.sex = 0 THEN 'Дядя'
+		WHEN ft.level = -1 AND ft.relationship_type = 'siblings' AND p.sex = 1 THEN 'Тетя'
+        WHEN ft.level = -2 AND p.sex = 0 THEN 'Дедушка'
+        WHEN ft.level = -2 AND p.sex = 1 THEN 'Бабушка'
+        WHEN ft.level = -3 AND p.sex = 0 THEN 'Прадедушка'
+        WHEN ft.level = -3 AND p.sex = 1 THEN 'Прабабушка'
+        WHEN ft.level = 1 THEN 'Ребенок'
+        WHEN ft.level = 2 AND p.sex = 0 THEN 'Внук'
+        WHEN ft.level = 2 AND p.sex = 1 THEN 'Внучка'
+        WHEN ft.level = 3 AND p.sex = 0 THEN 'Правнук'
+        WHEN ft.level = 3 AND p.sex = 1 THEN 'Правнучка'
+        ELSE 'Дальний родственник'
+    END AS "Степень родства"
+FROM FamilyTree ft
+JOIN Persons p ON ft.person_id = p.person_id
+UNION
+SELECT
+    ft.level AS "Уровень родственной иерархии",
+    p.surname || ' ' || p.first_name || COALESCE(' ' || p.patronymic, '') || 
+    CASE 
+        WHEN p.maiden_name IS NOT NULL AND p.maiden_name != '' THEN ' (' || p.maiden_name || ')' 
+        ELSE '' 
+    END AS "ФИО (ФИО до замужества)",
+	CASE
+		WHEN ft.level = 0 AND ft.relationship_type IS NULL THEN 'Обратившийся'
+		WHEN ft.level = 0 AND ft.relationship_type = 'siblings' AND p.sex = 0 THEN 'Брат'
+		WHEN ft.level = 0 AND ft.relationship_type = 'siblings' AND p.sex = 1 THEN 'Сестра'
+		WHEN ft.level = 0 AND ft.relationship_type = 'spouse' AND p.sex = 0 THEN 'Муж'
+		WHEN ft.level = 0 AND ft.relationship_type = 'spouse' AND p.sex = 1 THEN 'Жена'
+        WHEN ft.level = -1 AND ft.relationship_type != 'siblings' THEN 'Родитель'
+		WHEN ft.level = -1 AND ft.relationship_type = 'siblings' AND p.sex = 0 THEN 'Дядя'
+		WHEN ft.level = -1 AND ft.relationship_type = 'siblings' AND p.sex = 1 THEN 'Тетя'
+        WHEN ft.level = -2 AND p.sex = 0 THEN 'Дедушка'
+        WHEN ft.level = -2 AND p.sex = 1 THEN 'Бабушка'
+        WHEN ft.level = -3 AND p.sex = 0 THEN 'Прадедушка'
+        WHEN ft.level = -3 AND p.sex = 1 THEN 'Прабабушка'
+        WHEN ft.level = 1 THEN 'Ребенок'
+        WHEN ft.level = 2 AND p.sex = 0 THEN 'Внук'
+        WHEN ft.level = 2 AND p.sex = 1 THEN 'Внучка'
+        WHEN ft.level = 3 AND p.sex = 0 THEN 'Правнук'
+        WHEN ft.level = 3 AND p.sex = 1 THEN 'Правнучка'
+        ELSE 'Дальний родственник'
+    END AS "Степень родства"
+FROM FamilyTree1 ft
+JOIN Persons p ON ft.person_id = p.person_id
+ORDER BY ft.level ASC;
+"""
+
+        # Выполнение запроса и получение результатов
+        cursor.execute(recursive_query)
+        results = cursor.fetchall()
+
+        # Вывод результатов
+        for row in results:
+            print(row)
+
+        # Закрытие соединения с базой данных
+        conn.close()
+        return jsonify({'message': 'Успешное получение таблицы!', 'table': results}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Ошибка при получении человека!'}), 400
 
 @app.route('/api/edit/<search_id>', methods=['PUT'])
 def edit_person(search_id):
@@ -129,12 +329,26 @@ def edit_person(search_id):
         return jsonify({'error': str(type(e))}), 500
 
 
-@app.route('/api/picture', methods=['GET'])
-def send_picture():
+@app.route('/api/picture/<user_id>', methods=['GET'])
+def send_picture(user_id):
     try:
-        data = db.session.query(Relation).options(joinedload(Relation.person),
-                                                  joinedload(Relation.related_person)).all()
+        #data = db.session.query(Relation).options(joinedload(Relation.person),
+        #                                          joinedload(Relation.related_person)).all()
+        person1 = aliased(Person)
+        person2 = aliased(Person)
 
+        data = db.session.query(Relation) \
+            .join(person1, Relation.person_id == person1.person_id) \
+            .join(person2, Relation.related_person_id == person2.person_id) \
+            .filter(person1.user_id == user_id) \
+            .filter(person2.user_id == user_id) \
+            .all()
+        print(data)
+        if len(data) == 0:
+            files = glob.glob(f'./doctest-output/{user_id}/*')
+            for f in files:
+                os.remove(f)
+            return jsonify({"message": "Родственных связей не существует."}), 400
         # Сериализуем данные, включая имена людей
         serialized_data = [
             {
@@ -175,8 +389,8 @@ def send_picture():
                 d.node(str(person_id), person_name)
                 d.edge(str(person_id), str(related_person_id))
 
-        d.render(directory='doctest-output')
-        return send_file('./doctest-output/Digraph.gv.png', mimetype='image/png')
+        d.render(directory=f'doctest-output/{user_id}')
+        return send_file(f'./doctest-output/{user_id}/Digraph.gv.png', mimetype='image/png')
     except Exception as e:
         print(e)
         return jsonify({'error': str(type(e))}), 500

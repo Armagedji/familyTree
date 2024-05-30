@@ -12,12 +12,12 @@ function DataDisplay(props) {
     const [selectedPerson, setSelectedPerson] = useState(null);
     const [editMode, setEditMode] = useState(false); // Состояние для отслеживания редактирования
     const [editPerson, setEditPerson] = useState(null); // Состояние для хранения данных редактируемой персоны
-    const [imageUrl, setImageUrl] = useState('http://127.0.0.1:5000/api/picture');
+    const [imageUrl, setImageUrl] = useState(null);
 
   const handleRefreshClick = () => {
     // Генерируем случайное число, чтобы избежать кеширования изображения
     const randomNumber = Math.random();
-    const newImageUrl = `http://127.0.0.1:5000/api/picture?rand=${randomNumber}`;
+    const newImageUrl = `http://127.0.0.1:5000/api/picture/${props.user_id}?rand=${randomNumber}`;
     setImageUrl(newImageUrl);
   };
 
@@ -76,10 +76,9 @@ function DataDisplay(props) {
     };
 
     const getPicture = async () => {
-        console.log("1");
-        const response = await axios.get('http://127.0.0.1:5000/api/picture')
+        const response = await axios.get(`http://127.0.0.1:5000/api/picture/${props.user_id}`)
             .then(data => {
-        // Установка URL изображения в состояние
+        setImageUrl(`http://127.0.0.1:5000/api/picture/${props.user_id}`)
       })
       .catch(error => console.error('Fetch error:', error));
     }
@@ -131,6 +130,7 @@ function DataDisplay(props) {
                     <p>Фамилия: {personData.surname}</p>
                     <p>Имя: {personData.first_name}</p>
                     <p>Отчество: {personData.patronymic}</p>
+                    <p>Пол: {personData.sex === 0 ? "Мужской" : 'Женский'}</p>
                     <p>Дата рождения: {personData.birth_date}</p>
                     <p>Страна рождения: {personData.birth_country}</p>
                     <p>Город рождения: {personData.birth_city}</p>
@@ -167,7 +167,7 @@ function DataDisplay(props) {
             \
             <button onClick={getPicture}>Получить изображение</button>
             <div>
-                <img src={imageUrl} alt="Image"/>
+                <img src={imageUrl} alt="Изображение не загружено"/>
                 <button onClick={handleRefreshClick}>Refresh Image</button>
             </div>
         </div>

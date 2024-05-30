@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 function RelationshipsForm(props) {
-    const [people, setPeople] = useState('');
+    const [people, setPeople] = useState(props.persons);
     const [selectedPerson1, setSelectedPerson1] = useState('');
     const [selectedPerson2, setSelectedPerson2] = useState('');
     const [relationship, setRelationship] = useState('');
