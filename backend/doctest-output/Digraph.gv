@@ -1,0 +1,26 @@
+digraph {
+	1 [label="Максим Игошев"]
+	1 -> 2
+	2 [label="Булат Будяшкин"]
+	2 -> 3
+	{
+		rank=same
+		3 [label="Глеб Лушков"]
+		4 [label="Егор Маркин"]
+	}
+	5 [label="Ольга Игошева"]
+	5 -> 1
+	{
+		rank=same
+		6 [label="Владимир Афонин"]
+		5 [label="Ольга Игошева"]
+	}
+	{
+		rank=same
+		5 [label="Ольга Игошева"]
+		7 [label="Леонид Игошев"]
+	}
+	5 -> 7 [arrowhead=none color="black:invis:black"]
+	2 [label="Булат Будяшкин"]
+	2 -> 4
+}
