@@ -1,5 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import {Button, Form, FormGroup, Input, Label} from "reactstrap";
+import * as PropTypes from "prop-types";
+
+function Select(props) {
+    return null;
+}
+
+Select.propTypes = {
+    onChange: PropTypes.func,
+    value: PropTypes.string,
+    required: PropTypes.bool,
+    children: PropTypes.node
+};
 
 function RelationshipsForm(props) {
     const [people, setPeople] = useState(props.persons);
@@ -38,42 +51,42 @@ function RelationshipsForm(props) {
 
     if (people) {
         return (
-            <div>
-                <h2>Установка связи между людьми</h2>
-                <form onSubmit={handleRelationshipSubmit}>
-                    <div>
-                        <label>Выберите первого человека:</label>
-                        <select value={selectedPerson1} onChange={(e) => setSelectedPerson1(e.target.value)} required>
+            <div className='selected'>
+                <Form onSubmit={handleRelationshipSubmit}>
+                    <h4>Установка связи между людьми</h4>
+                    <FormGroup>
+                        <Label>Выберите первого человека:</Label>
+                        <Input type="select" value={selectedPerson1} onChange={(e) => setSelectedPerson1(e.target.value)} required>
                             <option value="">Выберите человека</option>
                             {people.map(person => (
                                 <option key={person['person_id']} value={person['person_id']}>
                                     {person['surname']} {person['first_name']} {person['patronymic']}
                                 </option>
                             ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label>Выберите второго человека:</label>
-                        <select value={selectedPerson2} onChange={(e) => setSelectedPerson2(e.target.value)} required>
+                        </Input>
+                    </FormGroup>
+                    <FormGroup>
+                        <Label>Выберите второго человека:</Label>
+                        <Input type="select" value={selectedPerson2} onChange={(e) => setSelectedPerson2(e.target.value)} required>
                             <option value="">Выберите человека</option>
                             {people.map(person => (
                                 <option key={person['person_id']} value={person['person_id']}>
                                     {person['surname']} {person['first_name']} {person['patronymic']}
                                 </option>
                             ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label>Выберите тип связи:</label>
-                        <select value={relationship} onChange={(e) => setRelationship(e.target.value)} required>
+                        </Input>
+                    </FormGroup>
+                    <FormGroup>
+                        <Label>Выберите тип связи:</Label>
+                        <Input type="select" value={relationship} onChange={(e) => setRelationship(e.target.value)} required>
                             <option value="">Выберите тип связи</option>
                             <option value="spouce">Муж/Жена</option>
                             <option value="siblings">Брат/Сестра</option>
                             <option value="parent-child">Отец/Мать</option>
-                        </select>
-                    </div>
-                    <button type="submit">Установить связь</button>
-                </form>
+                        </Input>
+                    </FormGroup>
+                    <Button type="submit">Установить связь</Button>
+                </Form>
                 {errorMessage && <p style={{color: 'red'}}>{errorMessage}</p>}
                 {successMessage && <p style={{color: 'green'}}>{successMessage}</p>}
             </div>

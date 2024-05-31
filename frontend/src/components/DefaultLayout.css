@@ -1,0 +1,13 @@
+#blablabla {
+    position: fixed; /* Div будет "прилипать" к экрану */
+    z-index: 9999; /* Максимальное значение z-индекса */
+    top: 0px; /* Опционально: разместить div в верхней части окна браузера */
+    left: 35%; /* Опционально: разместить div в левой части окна браузера */
+    overflow: scroll;
+    max-height: 80vh;
+    background-color: white;
+}
+
+.someType {
+    padding: 15px;
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import axios from 'axios';
 import './DataDisplay.css'; // стилизация компонента
 import EditForm from './EditForm'; // Подключаем компонент формы редактирования
@@ -14,12 +14,12 @@ function DataDisplay(props) {
     const [editPerson, setEditPerson] = useState(null); // Состояние для хранения данных редактируемой персоны
     const [imageUrl, setImageUrl] = useState(null);
 
-  const handleRefreshClick = () => {
-    // Генерируем случайное число, чтобы избежать кеширования изображения
-    const randomNumber = Math.random();
-    const newImageUrl = `http://127.0.0.1:5000/api/picture/${props.user_id}?rand=${randomNumber}`;
-    setImageUrl(newImageUrl);
-  };
+    const handleRefreshClick = () => {
+        // Генерируем случайное число, чтобы избежать кеширования изображения
+        const randomNumber = Math.random();
+        const newImageUrl = `http://127.0.0.1:5000/api/picture/${props.user_id}?rand=${randomNumber}`;
+        setImageUrl(newImageUrl);
+    };
 
     useEffect(() => {
         if (selectedPerson) {
@@ -40,136 +40,20 @@ function DataDisplay(props) {
         }
     };
 
-    const handleSearch = async () => {
-        try {
-            const response = await axios.get(`http://127.0.0.1:5000/api/search/${props.user_id}/${searchCategory}/${searchQuery}`);
-            console.log("Результаты поиска: ", response.data);
-            setSearchResults(response.data);
-            setErrorMessage('');
-        } catch (error) {
-            console.error('Ошибка при выполнении поиска:', error);
-            setErrorMessage('Ошибка при выполнении поиска');
-            setSearchResults([]);
-        }
-    };
-
-    const handleSelectPerson = async (personId) => {
-        setSelectedPerson(personId); // Устанавливаем выбранного человека
-        fetchData(personId); // Загружаем данные выбранного человека
-    };
-
-    const handleEditClick = (person) => {
-        setEditPerson(person);
-        setEditMode(true);
-    };
-
-    const handleCancelEdit = () => {
-        setEditPerson(null);
-        setEditMode(false);
-    };
-
-    const handleUpdateSuccess = (updatedPerson) => {
-        setPersonData(updatedPerson["person_id"]);
-        setEditMode(false);
-        setEditPerson(null);
-        fetchData(updatedPerson['person_id']);
-    };
 
     const getPicture = async () => {
         const response = await axios.get(`http://127.0.0.1:5000/api/picture/${props.user_id}`)
             .then(data => {
-        setImageUrl(`http://127.0.0.1:5000/api/picture/${props.user_id}`)
-      })
-      .catch(error => console.error('Fetch error:', error));
+                setImageUrl(`http://127.0.0.1:5000/api/picture/${props.user_id}`)
+            })
+            .catch(error => console.error('Fetch error:', error));
     }
 
-    const resetState = () => {
-        setPersonData({});
-        setErrorMessage('');
-        setSearchResults([]);
-        setSelectedPerson(null);
-        setEditMode(false);
-        setEditPerson(null);
-    };
-
     return (
-        <div className="data-display">
-            <h2>Отображение данных</h2>
-            <div className="search-section">
-                <label>Категория поиска:
-                    <select value={searchCategory} onChange={(e) => setSearchCategory(e.target.value)}>
-                        <option value="name">ФИО</option>
-                        <option value="birth_place">Место рождения</option>
-                        <option value="residences">Место жительства</option>
-                    </select>
-                </label>
-                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                       placeholder="Введите запрос"/>
-                <button onClick={handleSearch}>Поиск</button>
-            </div>
-
-            {errorMessage && <p className="error-message">{errorMessage}</p>}
-
-            <div className="search-results">
-                {searchResults.length > 0 && (
-                    <ul>
-                        {searchResults.map(result => (
-                            <li key={result.id}>
-                                <button onClick={() => handleSelectPerson(result.person_id)}>
-                                    {result.surname} {result.first_name} {result.patronymic} {result.person_id}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
-
-            {selectedPerson && (
-                <div className="person-details">
-                    <h3>Детали персоны</h3>
-                    <p>Фамилия: {personData.surname}</p>
-                    <p>Имя: {personData.first_name}</p>
-                    <p>Отчество: {personData.patronymic}</p>
-                    <p>Пол: {personData.sex === 0 ? "Мужской" : 'Женский'}</p>
-                    <p>Дата рождения: {personData.birth_date}</p>
-                    <p>Страна рождения: {personData.birth_country}</p>
-                    <p>Город рождения: {personData.birth_city}</p>
-                    <p>Профессии:</p>
-                    <ul>
-                        {personData.professions && personData.professions.map((profession, index) => (
-                            <li key={index}>{profession}</li>
-                        ))}
-                    </ul>
-                    <p>Образования:</p>
-                    <ul>
-                        {personData.educations && personData.educations.map((education, index) => (
-                            <li key={index}>{education}</li>
-                        ))}
-                    </ul>
-                    <p>Места жительства:</p>
-                    <ul>
-                        {personData.residences && personData.residences.map((residence, index) => (
-                            <li key={index}>Страна: {residence.country} | Город: {residence.city} |
-                                Адрес: {residence.street + " " + residence.house + ", " + residence.apartment + " | "}
-                                Дата проживания: {residence.start_date} -- {residence.end_date}</li>
-                        ))}
-                    </ul>
-                    <button onClick={() => handleEditClick(personData)}>Редактировать</button>
-                </div>
-            )}
-
-            {editMode && (
-                <EditForm initialPerson={editPerson} onCancel={handleCancelEdit}
-                          onUpdateSuccess={handleUpdateSuccess}/>
-            )}
-
-            <button onClick={resetState}>Очистить</button>
-            \
+        <div>
             <button onClick={getPicture}>Получить изображение</button>
-            <div>
-                <img src={imageUrl} alt="Изображение не загружено"/>
-                <button onClick={handleRefreshClick}>Refresh Image</button>
-            </div>
+            <button onClick={handleRefreshClick}>Обновить изображение</button>
+            <img id="lol" src={imageUrl} alt="Изображение не загружено"/>
         </div>
     );
 }

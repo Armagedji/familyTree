@@ -395,7 +395,7 @@ def send_picture(user_id):
         print(e)
         return jsonify({'error': str(type(e))}), 500
 
-@app.route('/setuser', methods=['POST'])
+@app.route('/api/register', methods=['POST'])
 def add_user():
     try:
         data = request.json
@@ -405,10 +405,9 @@ def add_user():
             email=data['email'])
         db.session.add(new_user)
         db.session.commit()
-        return "Все окей!"
-    except sqlalchemy.exc.IntegrityError as e:
-        print("Ты еблан, что то уже занято")
-        return jsonify({'message': 'Similar username or email already exists', 'error': "Bad data"}), 400
+        return jsonify({'message': 'Пользователь успешно зарегистрирован', 'user_id': new_user.user_id}), 200
+    except sqlalchemy.exc.IntegrityError:
+        return jsonify({'message': 'Пользователь с таким логином или почтой уже есть', 'error': "Bad data"}), 400
     except Exception as e:
         print(e)
         return str(e)
@@ -417,23 +416,19 @@ def add_user():
 def return_user():
     try:
         data = request.json
-        print(data)
         first_query = db.session.query(User).filter(
             User.username.like(data['usernameOrEmail']),
-            User.password.like(data['password']),
         ).first()
         second_query = db.session.query(User).filter(
             User.email.like(data['usernameOrEmail']),
-            User.password.like(data['password']),
         ).first()
-        print(first_query, second_query)
-
-        if first_query and second_query:
-            return jsonify({'message': 'Пользователь не найден'}), 400
-        elif first_query:
-            return jsonify({'message': 'Успешный вход!', 'user': first_query.user_id}), 200
-        return jsonify({'message': 'Успешный вход!', 'user': second_query.user_id}), 200
-
+        if first_query is None and second_query is None:
+            return jsonify({'error': 'Пользователь не найден'}), 400
+        elif first_query and first_query.password == data['password']:
+            return jsonify({'message': 'Успешный вход!', 'user_id': first_query.user_id, 'user_login': first_query.username}), 200
+        elif second_query and second_query.password == data['password']:
+            return jsonify({'message': 'Успешный вход!', 'user_id': first_query.user_id, 'user_login': first_query.username}), 200
+        return jsonify({'error': 'Неправильный пароль'}), 401
     except Exception as e:
         print(e)
         return str(e)
@@ -535,13 +530,6 @@ def get_person(person_id):
         return jsonify(person_dict), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-
-@app.route('/getuser', methods=['GET'])
-@marshal_with(user_fields)
-def show_table():
-    users = User.query.all()
-    return users
 
 
 if __name__ == '__main__':
