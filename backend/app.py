@@ -34,7 +34,6 @@ person_fields = {'person_id': fields.Integer, 'user_id': fields.Integer, 'surnam
 def add_person():
     data = request.json
     user_id = data['user_id']
-    nested = db.session.begin_nested()
     try:
         new_person = Person(
             user_id=user_id,
@@ -87,13 +86,11 @@ def add_person():
 
         db.session.add(new_person)
         db.session.commit()
-        return jsonify({'message': 'Person added successfully', 'person_id': new_person.person_id}), 201
+        return jsonify({'message': 'Человек успешно добавлен', 'person_id': new_person.person_id}), 200
     except Exception as e:
-        print(type(e))
-        print('--' * 50)
-        print(traceback.format_exc())
-        nested.rollback()
-    print(data['residences'])
+        db.session.rollback()
+        return jsonify({'error': 'Возникла ошибка', 'error_message': str(e)}), 500
+
 
 @app.route('/api/delete/<person_id>', methods=['DELETE'])
 def delete_person(person_id):
@@ -116,20 +113,21 @@ def delete_person(person_id):
 
         db.session.commit()
 
-        return jsonify({'message': 'Person and related data deleted successfully'}), 200
+        return jsonify({'message': 'Человек и связанные с ним данные были успешно удалены'}), 200
     except Exception as e:
         db.session.rollback()
-        print(e)
-        return jsonify({'message': 'Failed to delete person and related data', 'error': str(e)}), 500
+        return jsonify(
+            {'message': 'Возникла ошибка при удалении человека и связанных с ним данных', 'error': str(e)}), 500
 
-@app.route('/api/get/table', methods=['GET'])
-def get_table():
+
+@app.route('/api/get/table/<user_id>', methods=['GET'])
+def get_table(user_id):
     try:
         conn = sqlite3.connect('./instance/geneologicTree.db')
         cursor = conn.cursor()
 
         # Запрос с рекурсивной CTE для FamilyTree
-        recursive_query = """WITH RECURSIVE FamilyTree AS (
+        recursive_query = f"""WITH RECURSIVE FamilyTree AS (
     -- Base case: выбираем изначального человека
     SELECT
         0 AS level,
@@ -139,7 +137,7 @@ def get_table():
 		p.sex,
         NULL AS relationship_type
     FROM Persons p
-    WHERE p.is_primary_contact = 1
+    WHERE p.is_primary_contact = 1 AND p.user_id = {user_id}
 
     UNION ALL
 
@@ -167,7 +165,7 @@ def get_table():
 		p.sex,
         NULL AS relationship_type
     FROM Persons p
-    WHERE p.is_primary_contact = 1
+    WHERE p.is_primary_contact = 1 AND p.user_id = {user_id}
 
     UNION ALL
 
@@ -287,22 +285,19 @@ ORDER BY ft.level ASC;
 
         # Закрытие соединения с базой данных
         conn.close()
-        return jsonify({'message': 'Успешное получение таблицы!', 'table': results}), 200
+        return jsonify({'message': 'Таблица была успешно получена', 'table': results}), 200
     except Exception as e:
         db.session.rollback()
-        print(e)
-        return jsonify({'message': 'Ошибка при получении человека!'}), 400
+        return jsonify({'message': 'Ошибка при получении таблицы', 'error': str(e)}), 500
+
 
 @app.route('/api/edit/<search_id>', methods=['PUT'])
 def edit_person(search_id):
-    nested = db.session.begin_nested()
     try:
-        nested = db.session.begin_nested()
         data = request.json
         educations = data.pop('educations')
         professions = data.pop('professions')
         residences = data.pop('residences')
-        user_id = 1
         person = db.session.query(Person).get(search_id)
         print("До: ", person.professions)
         db.session.query(Profession).filter(Profession.person_id == search_id).delete()
@@ -322,17 +317,16 @@ def edit_person(search_id):
                                      start_date=i['start_date'], end_date=i['end_date'],
                                      person_id=person.person_id))
         db.session.commit()
-        return jsonify({'message': "Все ок!", 'person_id': search_id}), 201
+        return jsonify({'message': "Изменения успешно сохранены", 'person_id': search_id}), 201
     except Exception as e:
         db.session.rollback()
-        print(e)
-        return jsonify({'error': str(type(e))}), 500
+        return jsonify({'Произошла ошибка при сохранении данных': str(type(e))}), 500
 
 
 @app.route('/api/picture/<user_id>', methods=['GET'])
 def send_picture(user_id):
     try:
-        #data = db.session.query(Relation).options(joinedload(Relation.person),
+        # data = db.session.query(Relation).options(joinedload(Relation.person),
         #                                          joinedload(Relation.related_person)).all()
         person1 = aliased(Person)
         person2 = aliased(Person)
@@ -357,7 +351,8 @@ def send_picture(user_id):
                 'related_person_id': relation.related_person_id,
                 'relationship_type': relation.relationship_type,
                 'person_name': f'{relation.person.first_name} {relation.person.surname}',  # Добавляем имя person
-                'related_person_name': f'{relation.related_person.first_name} {relation.related_person.surname}'# Добавляем имя related_person
+                'related_person_name': f'{relation.related_person.first_name} {relation.related_person.surname}'
+                # Добавляем имя related_person
             }
             for relation in data
         ]
@@ -384,7 +379,7 @@ def send_picture(user_id):
                     s.attr(rank='same')
                     s.node(str(person_id), person_name)
                     s.node(str(related_person_id), related_person_name)
-                d.edge(str(person_id), str(related_person_id), arrowhead='none', color = "black:invis:black")
+                d.edge(str(person_id), str(related_person_id), arrowhead='none', color="black:invis:black")
             else:
                 d.node(str(person_id), person_name)
                 d.edge(str(person_id), str(related_person_id))
@@ -392,8 +387,8 @@ def send_picture(user_id):
         d.render(directory=f'doctest-output/{user_id}')
         return send_file(f'./doctest-output/{user_id}/Digraph.gv.png', mimetype='image/png')
     except Exception as e:
-        print(e)
-        return jsonify({'error': str(type(e))}), 500
+        return jsonify({'message': ' Произошла ошибка при отправке файла', 'error': str(type(e))}), 500
+
 
 @app.route('/api/register', methods=['POST'])
 def add_user():
@@ -412,6 +407,7 @@ def add_user():
         print(e)
         return str(e)
 
+
 @app.route('/api/login', methods=['POST'])
 def return_user():
     try:
@@ -425,9 +421,11 @@ def return_user():
         if first_query is None and second_query is None:
             return jsonify({'error': 'Пользователь не найден'}), 400
         elif first_query and first_query.password == data['password']:
-            return jsonify({'message': 'Успешный вход!', 'user_id': first_query.user_id, 'user_login': first_query.username}), 200
+            return jsonify(
+                {'message': 'Успешный вход!', 'user_id': first_query.user_id, 'user_login': first_query.username}), 200
         elif second_query and second_query.password == data['password']:
-            return jsonify({'message': 'Успешный вход!', 'user_id': first_query.user_id, 'user_login': first_query.username}), 200
+            return jsonify(
+                {'message': 'Успешный вход!', 'user_id': first_query.user_id, 'user_login': first_query.username}), 200
         return jsonify({'error': 'Неправильный пароль'}), 401
     except Exception as e:
         print(e)
@@ -439,13 +437,13 @@ def set_relationship():
     try:
         data = request.json
         relationship = Relation(person_id=data['person1'],
-                                 related_person_id=data['person2'],
-                                 relationship_type=data['relationship'])
+                                related_person_id=data['person2'],
+                                relationship_type=data['relationship'])
         db.session.add(relationship)
         db.session.commit()
-        return jsonify({'message': 'Relationship was created!'}), 201
+        return jsonify({'message': 'Связь была успешно создана.'}), 201
     except Exception as e:
-        return jsonify({"error": e}), 500
+        return jsonify({"message": 'Произошла ошибка при создании связи', "error": e}), 500
 
 
 @app.route('/api/search/<user_id>/<category>/<query>', methods=['GET'])
@@ -474,28 +472,28 @@ def search_persons(user_id, category, query):
                 (Residence.street.contains(query))
             ).all()
         else:
-            return jsonify({'error': 'Invalid category'})
+            return jsonify({'error': 'Неверная категория поиска'}), 400
 
         if not persons:
-            return jsonify({'message': 'No persons found'})
+            return jsonify({'message': 'Людей по запросу не найдено'})
 
         # Сериализация результатов
         serialized_persons = [person.to_dict() for person in persons]
         return jsonify(serialized_persons)
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'message': 'Произошла ошибка при поиске людей', 'error': str(e)}), 500
 
 
 @app.route('/api/getpersons/<user_id>', methods=['GET'])
 @marshal_with(person_fields)
 def return_persons(user_id):
-    print(user_id)
-    persons = (Person.query.filter_by(user_id = int(user_id))).all()
-    print(persons)
-    serialized_persons = [person.to_dict() for person in persons]
-    print(serialized_persons)
-    return serialized_persons
+    try:
+        persons = (Person.query.filter_by(user_id=user_id)).all()
+        serialized_persons = [person.to_dict() for person in persons]
+        return serialized_persons
+    except Exception as e:
+        return jsonify({'message': 'Произошла ошибка при получении списка людей.', 'error': str(e)}), 500
 
 
 @app.route('/api/getperson/<person_id>', methods=['GET'])
@@ -529,7 +527,7 @@ def get_person(person_id):
 
         return jsonify(person_dict), 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'message': 'Произошла ошибка при получении информации о человеке', 'error': str(e)}), 500
 
 
 if __name__ == '__main__':

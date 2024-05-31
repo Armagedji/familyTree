@@ -1,17 +1,17 @@
 import React, {useState} from 'react';
 import axios from 'axios';
-import {Button, Form, FormFeedback, FormGroup, Input, Label} from "reactstrap";
+import {Button, Form, FormGroup, Input, Label} from "reactstrap";
 import {useNavigate} from "react-router-dom";
 
 function LoginForm({userData}) {
-    const navigate = useNavigate();
+    const navigate = useNavigate(); //Хук для перенаправления на другую страницу
     const [credentials, setCredentials] = useState({
         usernameOrEmail: '',
         password: ''
-    });
-    const [errorMessage, setErrorMessage] = useState(null);
+    }); // Значения из полей ввода
+    const [errorMessage, setErrorMessage] = useState(null); //Сообщение об ошибке
 
-    const handleChange = (e) => {
+    const handleChange = (e) => { //Обработчик изменений полей ввода
         const {name, value} = e.target;
         setCredentials({
             ...credentials,

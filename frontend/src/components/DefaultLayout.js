@@ -12,10 +12,10 @@ import './DefaultLayout.css';
 
 
 function DefaultLayout() {
-    const [userId, setUserId] = useState(localStorage.getItem('userId'));
-    const [editPerson, setEditPerson] = useState(null);
-    const [persons, setPersons] = useState(JSON.parse(localStorage.getItem('persons')));
-    const [selectedPerson, setSelectedPerson] = useState({
+    const [userId, setUserId] = useState(localStorage.getItem('userId')); //Идентификатор пользователя
+    const [editPerson, setEditPerson] = useState(null); //Выбранный для редактирования пользователь
+    const [persons, setPersons] = useState(JSON.parse(localStorage.getItem('persons'))); //Локальное хранение данных о людях пользователя
+    const [selectedPerson, setSelectedPerson] = useState({ //Пустые поля для информации о человеке по умолчанию
         surname: '',
         maiden_name: '',
         first_name: '',
@@ -41,27 +41,21 @@ function DefaultLayout() {
         educations: [],
         residences: []
     });
-    const handleLogout = () => {
-        localStorage.removeItem('userId'); // Удаляем user_id из localStorage
-        localStorage.removeItem('persons');
-        localStorage.removeItem('username');
-        window.location.reload(); // Перезагружаем страницу
-    };
 
-    const handleSearchResult = (personData) => {
+    const handleSearchResult = (personData) => { //Обработчик поиска человека
         setSelectedPerson(personData);
     }
 
-    const handleEditMode = (editPersonData) => {
+    const handleEditMode = (editPersonData) => { //Выставление данных о редактируемом человеке
         setEditPerson(editPersonData);
     }
 
-    const handleUpdateSuccess = (updatedPerson) => {
+    const handleUpdateSuccess = (updatedPerson) => { //Обновление данных после изменения
         setEditPerson(null);
         fetchData(updatedPerson['person_id']);
     };
 
-    const fetchData = async (personId) => {
+    const fetchData = async (personId) => { //Запрос с обновлением данных об определенном человеке
         try {
             const response = await axios.get(`http://127.0.0.1:5000/api/getperson/${personId}`);
             console.log("Данные: ", response.data);
@@ -72,7 +66,7 @@ function DefaultLayout() {
     };
 
     const handleCancelEdit = () => {
-        setEditPerson(null);
+        setEditPerson(null); //Отмена редактирования человека
     };
 
     return (

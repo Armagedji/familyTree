@@ -4,14 +4,6 @@ import './DataDisplay.css'; // стилизация компонента
 import EditForm from './EditForm'; // Подключаем компонент формы редактирования
 
 function DataDisplay(props) {
-    const [personData, setPersonData] = useState({});
-    const [errorMessage, setErrorMessage] = useState('');
-    const [searchCategory, setSearchCategory] = useState('name');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
-    const [selectedPerson, setSelectedPerson] = useState(null);
-    const [editMode, setEditMode] = useState(false); // Состояние для отслеживания редактирования
-    const [editPerson, setEditPerson] = useState(null); // Состояние для хранения данных редактируемой персоны
     const [imageUrl, setImageUrl] = useState(null);
 
     const handleRefreshClick = () => {
@@ -22,24 +14,18 @@ function DataDisplay(props) {
     };
 
     useEffect(() => {
-        if (selectedPerson) {
-            console.log(selectedPerson);
-            fetchData(selectedPerson);
+        const fetchData = async () => {
+            const response = await axios.get(`http://127.0.0.1:5000/api/picture/${props.user_id}`)
+            .then((data) => {
+                setImageUrl(`http://127.0.0.1:5000/api/picture/${props.user_id}`);
+                console.log(data);
+            })
+            .catch(error => console.error('Fetch error:', error));
         }
-    }, [selectedPerson]);
-
-    const fetchData = async (personId) => {
-        try {
-            const response = await axios.get(`http://127.0.0.1:5000/api/getperson/${personId}`);
-            console.log("Данные: ", response.data);
-            setPersonData(response.data);
-            setSearchResults([]);
-        } catch (error) {
-            console.error('Ошибка при загрузке данных:', error);
-            setErrorMessage('Ошибка при загрузке данных');
+        if (!imageUrl) {
+            fetchData();
         }
-    };
-
+    }, []);
 
     const getPicture = async () => {
         const response = await axios.get(`http://127.0.0.1:5000/api/picture/${props.user_id}`)

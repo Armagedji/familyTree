@@ -7,17 +7,14 @@ function TableForm() {
 
     useEffect(() => {
         const fetchData = async () => {
-            const response = await axios.get('api/get/table');
+            const response = await axios.get(`api/get/table/${localStorage.getItem('userId')}`);
             setFamilyTreeData(response.data.table);
-        };
-        fetchData();
-    }, []);
+        }
+        if (!familyTreeData.length) {
+            fetchData();
+        }
+    }, [familyTreeData]);
 
-    const getTable = async () => {
-        const response = await axios.get('api/get/table');
-        setFamilyTreeData(response.data.table);
-        console.log(response);
-    }
 
     return (
         <div className='selected'>

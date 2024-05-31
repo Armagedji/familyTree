@@ -147,6 +147,7 @@ function PersonRegistrationForm(props) {
 
     return (
         <form onSubmit={handleSubmit}>
+            <h4>Регистрация человека</h4>
             {/* Основные данные */}
             <h2>Основные данные:</h2>
             <input type="text" name="surname" value={person.surname} onChange={handleChange} placeholder="Фамилия"

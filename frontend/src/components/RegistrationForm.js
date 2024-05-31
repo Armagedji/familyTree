@@ -1,19 +1,18 @@
 import React, {useState} from 'react';
 import axios from 'axios';
-import {Button, Form, FormFeedback, FormGroup, Input, Label} from "reactstrap";
-import {Link, Navigate, useNavigate} from "react-router-dom";
+import {Button, Form, FormGroup, Input, Label} from "reactstrap";
+import {useNavigate} from "react-router-dom";
 
 function RegistrationForm({user_id}) {
-    const navigate = useNavigate();
-    const [errorMessage, setErrorMessage] = useState(null);
-    const [user, setUser] = useState({
+    const navigate = useNavigate(); //Хук для перенаправления на другую страницу
+    const [errorMessage, setErrorMessage] = useState(null); //Сообщение об ошибке
+    const [user, setUser] = useState({ //Хук с данными из полей ввода
         username: '',
         password: '',
         email: '',
     });
 
-
-    const handleChange = (e) => {
+    const handleChange = (e) => { //Обработчик изменений в полях ввода
         const {name, value} = e.target;
         setUser({
             ...user,
@@ -21,18 +20,18 @@ function RegistrationForm({user_id}) {
         });
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e) => { //Запрос на бэкенд для регистрации пользователя
         e.preventDefault()
         axios.post('http://127.0.0.1:5000/api/register', {
             username: user.username,
             password: user.password,
             email: user.email
         })
-            .then((response) => {
+            .then((response) => { //Выполняется при успешном запросе
                 user_id(response.data.user_id);
                 setErrorMessage(null);
             })
-            .catch((error) => {
+            .catch((error) => {//Выполняется при ошибке
                 console.log(error)
                 setErrorMessage(error.response.data.message);
             });

@@ -7,3 +7,9 @@
 #lol {
     border: solid;
 }
+
+img {
+display: inline-block;
+    margin-right: 5px;
+    margin-left: auto;
+}
