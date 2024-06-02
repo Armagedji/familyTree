@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import axios from 'axios';
 import './DataDisplay.css'; // стилизация компонента
-import EditForm from './EditForm'; // Подключаем компонент формы редактирования
+import {Button} from "reactstrap"; // Подключаем компонент формы редактирования
 
 function DataDisplay(props) {
     const [imageUrl, setImageUrl] = useState(null);
@@ -16,11 +16,11 @@ function DataDisplay(props) {
     useEffect(() => {
         const fetchData = async () => {
             const response = await axios.get(`http://127.0.0.1:5000/api/picture/${props.user_id}`)
-            .then((data) => {
-                setImageUrl(`http://127.0.0.1:5000/api/picture/${props.user_id}`);
-                console.log(data);
-            })
-            .catch(error => console.error('Fetch error:', error));
+                .then((data) => {
+                    setImageUrl(`http://127.0.0.1:5000/api/picture/${props.user_id}`);
+                    console.log(data);
+                })
+                .catch(error => console.error('Fetch error:', error));
         }
         if (!imageUrl) {
             fetchData();
@@ -36,10 +36,12 @@ function DataDisplay(props) {
     }
 
     return (
-        <div>
-            <button onClick={getPicture}>Получить изображение</button>
-            <button onClick={handleRefreshClick}>Обновить изображение</button>
-            <img id="lol" src={imageUrl} alt="Изображение не загружено"/>
+        <div className='selected'>
+            <Button style={{backgroundColor: '#0353a4', margin: '10px'}} onClick={getPicture}>Получить изображение</Button>
+            <Button style={{backgroundColor: '#0353a4'}} onClick={handleRefreshClick}>Обновить изображение</Button>
+            <div style={{width: '100%'}}>
+                <img style={{width: '100%'}} id="lol" src={imageUrl} alt="Изображение не загружено"/>
+            </div>
         </div>
     );
 }

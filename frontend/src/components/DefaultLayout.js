@@ -14,6 +14,7 @@ import './DefaultLayout.css';
 function DefaultLayout() {
     const [userId, setUserId] = useState(localStorage.getItem('userId')); //Идентификатор пользователя
     const [editPerson, setEditPerson] = useState(null); //Выбранный для редактирования пользователь
+    const [addPerson, setAddPerson] = useState(false);
     const [persons, setPersons] = useState(JSON.parse(localStorage.getItem('persons'))); //Локальное хранение данных о людях пользователя
     const [selectedPerson, setSelectedPerson] = useState({ //Пустые поля для информации о человеке по умолчанию
         surname: '',
@@ -72,40 +73,37 @@ function DefaultLayout() {
     return (
         <Container fluid>
             <Row>
-                <Col sm='7' >
+                <Col sm='7'>
                     <DataDisplay user_id={userId}/>
                 </Col>
                 <Col sm='5'>
-            <SearchForm personData={handleSearchResult} user_id={userId}/>
-            <PersonInfo personData={selectedPerson} editMode={handleEditMode}/>
+                    <SearchForm personData={handleSearchResult} user_id={userId}/>
+                    <PersonInfo personData={selectedPerson} editMode={handleEditMode}/>
                 </Col>
             </Row>
             <Row>
                 <Col>
-                <TableForm/>
+                    <TableForm/>
                 </Col>
                 <Col sm='3'>
-                {persons ?
-                    <RelationshipForm user_id={userId} persons={persons}/>
-                    : <div> Данные еще не были получены </div>
-                }
+                    {persons ?
+                        <RelationshipForm user_id={userId} persons={persons}/>
+                        : <div> Данные еще не были получены </div>
+                    }
                 </Col>
                 <Col sm='3'>
-                    <Button>Добавить нового человека</Button>
+                    <Button onClick={()=> {
+                        setAddPerson(true)
+                    }} style={{backgroundColor: '#0353a4', height:'150px'}}>Добавить нового
+                        человека</Button>
                 </Col>
             </Row>
             {editPerson ?
-                <EditForm id="blablabla" initialPerson={editPerson} onCancel={handleCancelEdit}
-                          onUpdateSuccess={handleUpdateSuccess}/> : "Тут ничего нет!"}
-            <div align="center" className="three">
-                <h3>Регистрация человека</h3>
-                <PersonRegistrationForm user_id={userId}/>
-            </div>
-            <div className="four">
-                {<DataDisplay user_id={userId}/>}
-            </div>
-            <div>
-            </div>
+                <EditForm initialPerson={editPerson} onCancel={handleCancelEdit}
+                          onUpdateSuccess={handleUpdateSuccess}/> : ""}
+            {addPerson ? <PersonRegistrationForm user_id={userId} onCancel={() => {
+                setAddPerson(false)
+            }}/> : ""}
         </Container>);
 }
 

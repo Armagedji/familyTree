@@ -33,7 +33,7 @@ function LoginForm({userData}) {
     };
 
     return (
-        <div className='selected'>
+        <div className='selected' style={{backgroundColor: '#b9d6f2'}}>
         <Form onSubmit={handleSubmit}>
             <h2>Вход</h2>
             <FormGroup controlId='formBasicLogin'>
@@ -62,9 +62,9 @@ function LoginForm({userData}) {
                     required
                 />
             </FormGroup>
-            <Button> Войти </Button>
+            <Button style={{backgroundColor: '#0353a4'}}> Войти </Button>
         </Form>
-            <Button onClick={() => {navigate('/register');}}>Зарегистрироваться</Button>
+            <Button style={{backgroundColor: '#0353a4'}} onClick={() => {navigate('/register');}}>Зарегистрироваться</Button>
     </div>
     );
 }

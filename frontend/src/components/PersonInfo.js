@@ -1,11 +1,12 @@
 import React from "react";
+import {Button} from "reactstrap";
 
 
-function PersonInfo (props) {
+function PersonInfo(props) {
     const {personData, editMode} = props;
 
     const handleEditClick = (personData) => {
-            editMode(personData)
+        editMode(personData)
     }
 
     return (
@@ -15,9 +16,15 @@ function PersonInfo (props) {
             <p>Имя: {personData.first_name}</p>
             <p>Отчество: {personData.patronymic}</p>
             <p>Пол: {personData.sex === 0 ? "Мужской" : 'Женский'}</p>
-            <p>Дата рождения: {personData.birth_date}</p>
-            <p>Страна рождения: {personData.birth_country}</p>
-            <p>Город рождения: {personData.birth_city}</p>
+            <p>Дата рождения: {`${personData.birth_date} ${personData.birth_date_approx ? '(приблизительно)' : ""}`}</p>
+            <p>Место
+                рождения: {personData.person_id ? `${personData.birth_country}, город ${personData.birth_city}, улица ${personData.birth_street}
+            , дом ${personData.birth_house}, квартира ${personData.birth_apartment}` : ""}</p>
+            {(personData.death_date !== '') ? (<p>Дата смерти:
+                ${personData.death_date} ${personData.death_date_approx ? '(приблизительно)' : ""} </p>) : ''}
+            {personData.person_id && (personData.death_country !== '' || personData.death_city !== '') ?
+                <p>Место смерти: `${personData.death_country},
+                    город ${personData.death_city}` </p> : ""}
             <p>Профессии:</p>
             <ul>
                 {personData.professions && personData.professions.map((profession, index) => (
@@ -38,7 +45,12 @@ function PersonInfo (props) {
                         Дата проживания: {residence.start_date} -- {residence.end_date}</li>
                 ))}
             </ul>
-            {personData.user_id ? <button onClick={() => handleEditClick(personData)}>Редактировать</button> : ''}
+            <p>Национальность: {personData.nationality}</p>
+            <p>Социальный статус: {personData.social_status}</p>
+            <p>Метод полученной информации: {personData.information_source}</p>
+            <p>Детали из жизни: {personData.life_details}</p>
+            {personData.user_id ? <Button style={{backgroundColor: '#0353a4'}}
+                                          onClick={() => handleEditClick(personData)}>Редактировать</Button> : ''}
         </div>
     );
 }

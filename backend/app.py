@@ -1,10 +1,8 @@
 import sqlalchemy
-from sqlalchemy.orm import joinedload, contains_eager
 from flask import Flask, request, jsonify, send_file
 from flask_restful import fields, marshal_with
 from flask_cors import CORS
 from models import db, User, Person, Education, Profession, Residence, Relation
-import traceback
 import graphviz
 import sqlite3
 from sqlalchemy.orm import aliased
@@ -16,19 +14,6 @@ db.init_app(app)
 CORS(app)
 
 app.app_context().push()
-
-user_fields = {'user_id': fields.Integer, 'username': fields.String, 'password': fields.String,
-               'email': fields.String}
-person_fields = {'person_id': fields.Integer, 'user_id': fields.Integer, 'surname': fields.String,
-                 'maiden_name': fields.String, 'first_name': fields.String, 'patronymic': fields.String,
-                 'sex': fields.Integer,
-                 'birth_date': fields.String, 'birth_date_approx': fields.Boolean, 'birth_country': fields.String,
-                 'birth_city': fields.String, 'birth_street': fields.String, 'birth_house': fields.String,
-                 'birth_apartment': fields.String, 'death_date': fields.String, 'death_date_approx': fields.Boolean,
-                 'death_country': fields.String, 'death_city': fields.String, 'nationality': fields.String,
-                 'social_status': fields.String, 'information_source': fields.String, 'life_details': fields.String,
-                 'is_primary_contact': fields.Boolean, }
-
 
 @app.route('/api/setperson', methods=['POST'])
 def add_person():
@@ -279,12 +264,9 @@ ORDER BY ft.level ASC;
         cursor.execute(recursive_query)
         results = cursor.fetchall()
 
-        # Вывод результатов
-        for row in results:
-            print(row)
-
         # Закрытие соединения с базой данных
         conn.close()
+        print(results)
         return jsonify({'message': 'Таблица была успешно получена', 'table': results}), 200
     except Exception as e:
         db.session.rollback()
@@ -299,12 +281,9 @@ def edit_person(search_id):
         professions = data.pop('professions')
         residences = data.pop('residences')
         person = db.session.query(Person).get(search_id)
-        print("До: ", person.professions)
         db.session.query(Profession).filter(Profession.person_id == search_id).delete()
         db.session.query(Education).filter(Education.person_id == search_id).delete()
         db.session.commit()
-        print("После: ", person.professions)
-        print("professions:", professions)
         for key, value in data.items():
             setattr(person, key, value)
         for i in professions:
@@ -337,7 +316,6 @@ def send_picture(user_id):
             .filter(person1.user_id == user_id) \
             .filter(person2.user_id == user_id) \
             .all()
-        print(data)
         if len(data) == 0:
             files = glob.glob(f'./doctest-output/{user_id}/*')
             for f in files:
@@ -350,16 +328,15 @@ def send_picture(user_id):
                 'person_id': relation.person_id,
                 'related_person_id': relation.related_person_id,
                 'relationship_type': relation.relationship_type,
-                'person_name': f'{relation.person.first_name} {relation.person.surname}',  # Добавляем имя person
+                'person_name': f'{relation.person.first_name} {relation.person.surname}',
                 'related_person_name': f'{relation.related_person.first_name} {relation.related_person.surname}'
-                # Добавляем имя related_person
             }
             for relation in data
         ]
         persons = set()
         for relation in serialized_data:
-            persons.add(relation['person_id'])  # person_id
-            persons.add(relation['related_person_id'])  # related_person_id
+            persons.add(relation['person_id'])
+            persons.add(relation['related_person_id'])
 
         d = graphviz.Digraph(format='png')
 
@@ -369,6 +346,7 @@ def send_picture(user_id):
             relationship_type = item['relationship_type']
             person_name = item['person_name']
             related_person_name = item['related_person_name']
+            print(person_name, related_person_name)
             if relationship_type == 'siblings':
                 with d.subgraph() as s:
                     s.attr(rank='same')
@@ -486,11 +464,11 @@ def search_persons(user_id, category, query):
 
 
 @app.route('/api/getpersons/<user_id>', methods=['GET'])
-@marshal_with(person_fields)
 def return_persons(user_id):
     try:
         persons = (Person.query.filter_by(user_id=user_id)).all()
         serialized_persons = [person.to_dict() for person in persons]
+        print(serialized_persons)
         return serialized_persons
     except Exception as e:
         return jsonify({'message': 'Произошла ошибка при получении списка людей.', 'error': str(e)}), 500

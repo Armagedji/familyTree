@@ -56,7 +56,7 @@ function SearchForm({personData}) {
                 <InputGroup>
                     <Input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                            placeholder="Введите запрос"/>
-                    <Button onClick={handleSearch}>Поиск</Button>
+                    <Button style={{backgroundColor: '#0353a4'}} onClick={handleSearch}>Поиск</Button>
                 </InputGroup>
             </InputGroup>
 
@@ -69,9 +69,9 @@ function SearchForm({personData}) {
                     <ul>
                         {searchResults.map(result => (
                             <li key={result.id}>
-                                <button onClick={() => handleSelectPerson(result.person_id)}>
+                                <Button style={{backgroundColor: '#0353a4'}} onClick={() => handleSelectPerson(result.person_id)}>
                                     {result.surname} {result.first_name} {result.patronymic} {result.maiden_name ? `(${result.maiden_name})` : ""}
-                                </button>
+                                </Button>
                             </li>
                         ))}
                     </ul>

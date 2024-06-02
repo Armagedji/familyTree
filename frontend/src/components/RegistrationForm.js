@@ -39,7 +39,7 @@ function RegistrationForm({user_id}) {
 
 
     return (
-        <div className='selected'>
+        <div className='selected' style={{backgroundColor: '#b9d6f2'}}>
             <Form onSubmit={handleSubmit}>
                 <h2>Регистрация</h2>
                 <FormGroup>
@@ -58,9 +58,9 @@ function RegistrationForm({user_id}) {
                            placeholder='example@gmail.com'/>
                 </FormGroup>
                 {errorMessage && <p className="error-message">{errorMessage}</p>}
-                <Button>Зарегистрироваться</Button>
+                <Button style={{backgroundColor: '#0353a4'}}>Зарегистрироваться</Button>
             </Form><br/>
-            <Button onClick={() => {navigate('/login');}}>Вход</Button>
+            <Button style={{backgroundColor: '#0353a4'}} onClick={() => {navigate('/login');}}>Вход</Button>
         </div>
     );
 }

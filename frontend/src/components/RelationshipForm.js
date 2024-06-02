@@ -85,7 +85,7 @@ function RelationshipsForm(props) {
                             <option value="parent-child">Отец/Мать</option>
                         </Input>
                     </FormGroup>
-                    <Button type="submit">Установить связь</Button>
+                    <Button style={{backgroundColor: '#0353a4'}} type="submit">Установить связь</Button>
                 </Form>
                 {errorMessage && <p style={{color: 'red'}}>{errorMessage}</p>}
                 {successMessage && <p style={{color: 'green'}}>{successMessage}</p>}

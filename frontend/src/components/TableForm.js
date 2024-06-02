@@ -1,20 +1,14 @@
 import React, {useEffect, useState} from 'react';
 import axios from 'axios';
-import {Table} from 'reactstrap';
+import {Button, Table} from 'reactstrap';
 
 function TableForm() {
     const [familyTreeData, setFamilyTreeData] = useState([])
 
-    useEffect(() => {
-        const fetchData = async () => {
+    const fetchData = async () => {
             const response = await axios.get(`api/get/table/${localStorage.getItem('userId')}`);
             setFamilyTreeData(response.data.table);
         }
-        if (!familyTreeData.length) {
-            fetchData();
-        }
-    }, [familyTreeData]);
-
 
     return (
         <div className='selected'>
@@ -37,6 +31,7 @@ function TableForm() {
                 ))}
                 </tbody>
             </Table>
+            <Button style={{backgroundColor: '#0353a4'}} onClick={fetchData}>Обновить таблицу</Button>
         </div>
     )
 }

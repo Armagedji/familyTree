@@ -111,6 +111,14 @@ function EditForm({initialPerson, onCancel, onUpdateSuccess}) {
         });
     };
 
+    const handleUpdate = async () => {
+        await axios.get(`http://127.0.0.1:5000/api/getpersons/${localStorage.getItem('userId')}`)
+            .then((result) => {
+                localStorage.setItem('persons', JSON.stringify(result.data))
+            })
+            .catch((error)=>{console.log(error)});
+    }
+
     const handleSubmit = (e) => {
         e.preventDefault();
         axios.put(`http://127.0.0.1:5000/api/edit/${person['person_id']}`, person)
@@ -118,6 +126,7 @@ function EditForm({initialPerson, onCancel, onUpdateSuccess}) {
                 console.log('Person updated:', response.data);
                 // Обновляем данные в DataDisplay
                 onUpdateSuccess(response.data); // Передаем обновленные данные
+                handleUpdate();
             })
             .catch(error => {
                 console.error('There was an error updating the person!', error);
@@ -129,6 +138,7 @@ function EditForm({initialPerson, onCancel, onUpdateSuccess}) {
             .then(response => {
                 console.log('Person deleted:', response.data);
                 onUpdateSuccess(null); // Передаем null, чтобы указать удаление
+                handleUpdate();
             })
             .catch(error => {
                 console.error('There was an error deleting the person!', error);
@@ -257,10 +267,10 @@ function EditForm({initialPerson, onCancel, onUpdateSuccess}) {
                                 onChange={(e) => handleProfessionChange(e, index)}
                                 placeholder={`Профессия ${index + 1}`}
                             />
-                            <Button type="button" onClick={() => removeProfession(index)}>Удалить</Button>
+                            <Button style={{backgroundColor: '#0353a4'}} type="button" onClick={() => removeProfession(index)}>Удалить</Button>
                         </div>
                     ))}
-                    <Button type="button" onClick={addProfession}>Добавить профессию</Button>
+                    <Button style={{backgroundColor: '#0353a4'}} type="button" onClick={addProfession}>Добавить профессию</Button>
                 </div>
                 <div className="someType">
                     <h3>Образования:</h3>
@@ -272,10 +282,10 @@ function EditForm({initialPerson, onCancel, onUpdateSuccess}) {
                                 onChange={(e) => handleEducationChange(e, index)}
                                 placeholder={`Образование ${index + 1}`}
                             />
-                            <Button type="button" onClick={() => removeEducation(index)}>Удалить</Button>
+                            <Button style={{backgroundColor: '#0353a4'}} type="button" onClick={() => removeEducation(index)}>Удалить</Button>
                         </div>
                     ))}
-                    <Button type="button" onClick={addEducation}>Добавить образование</Button>
+                    <Button style={{backgroundColor: '#0353a4'}} type="button" onClick={addEducation}>Добавить образование</Button>
                 </div>
                 <div className="someType">
                     <h3>Места жительства:</h3>
@@ -334,13 +344,13 @@ function EditForm({initialPerson, onCancel, onUpdateSuccess}) {
                                 placeholder="Дата окончания (гггг-мм-дд)"
                                 title="Введите дату окончания проживания. Оставьте поле пустым, если проживание продолжается"
                             />
-                            <Button type="button" onClick={() => removeResidence(index)}>Удалить</Button>
+                            <Button style={{backgroundColor: '#0353a4'}} type="button" onClick={() => removeResidence(index)}>Удалить</Button>
                         </div>
                     ))}
-                    <Button type="button" onClick={addResidence}>Добавить место жительства</Button></div>
+                    <Button style={{backgroundColor: '#0353a4'}} type="button" onClick={addResidence}>Добавить место жительства</Button></div>
 
-                <Button type="submit">Сохранить</Button>
-                <Button type="button" onClick={onCancel}>Отмена</Button>
+                <Button style={{backgroundColor: '#0353a4'}} type="submit">Сохранить</Button>
+                <Button style={{backgroundColor: '#0353a4'}} type="button" onClick={onCancel}>Отмена</Button>
                 <Button color="danger" type="button" onClick={handleDeletePerson}>Удалить</Button>
             </Form>
         </div>
