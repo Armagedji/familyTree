@@ -11,10 +11,10 @@ import axios from "axios";
 import './DefaultLayout.css';
 
 
-function DefaultLayout() {
+function MainPage() {
     const [userId, setUserId] = useState(localStorage.getItem('userId')); //Идентификатор пользователя
     const [editPerson, setEditPerson] = useState(null); //Выбранный для редактирования пользователь
-    const [addPerson, setAddPerson] = useState(false);
+    const [addPerson, setAddPerson] = useState(false); //Переключение отображения формы с добавлением пользователя
     const [persons, setPersons] = useState(JSON.parse(localStorage.getItem('persons'))); //Локальное хранение данных о людях пользователя
     const [selectedPerson, setSelectedPerson] = useState({ //Пустые поля для информации о человеке по умолчанию
         surname: '',
@@ -73,28 +73,20 @@ function DefaultLayout() {
     return (
         <Container fluid>
             <Row>
-                <Col sm='7'>
-                    <DataDisplay user_id={userId}/>
-                </Col>
-                <Col sm='5'>
-                    <SearchForm personData={handleSearchResult} user_id={userId}/>
-                    <PersonInfo personData={selectedPerson} editMode={handleEditMode}/>
-                </Col>
-            </Row>
-            <Row>
                 <Col>
+                    <DataDisplay user_id={userId}/>
                     <TableForm/>
                 </Col>
-                <Col sm='3'>
+                <Col style={{alignItems: "stretch"}}>
+                    <SearchForm personData={handleSearchResult} user_id={userId}/>
+                    {selectedPerson.user_id ? <PersonInfo hide={()=>{setSelectedPerson({user_id: null})}} personData={selectedPerson} editMode={handleEditMode}/> : ""}
                     {persons ?
                         <RelationshipForm user_id={userId} persons={persons}/>
                         : <div> Данные еще не были получены </div>
                     }
-                </Col>
-                <Col sm='3'>
-                    <Button onClick={()=> {
+                    <Button onClick={() => {
                         setAddPerson(true)
-                    }} style={{backgroundColor: '#0353a4', height:'150px'}}>Добавить нового
+                    }} style={{backgroundColor: '#0353a4', height: '150px'}}>Добавить нового
                         человека</Button>
                 </Col>
             </Row>
@@ -107,4 +99,4 @@ function DefaultLayout() {
         </Container>);
 }
 
-export default DefaultLayout;
+export default MainPage;

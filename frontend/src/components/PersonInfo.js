@@ -3,7 +3,7 @@ import {Button} from "reactstrap";
 
 
 function PersonInfo(props) {
-    const {personData, editMode} = props;
+    const {personData, editMode, hide} = props;
 
     const handleEditClick = (personData) => {
         editMode(personData)
@@ -49,8 +49,10 @@ function PersonInfo(props) {
             <p>Социальный статус: {personData.social_status}</p>
             <p>Метод полученной информации: {personData.information_source}</p>
             <p>Детали из жизни: {personData.life_details}</p>
-            {personData.user_id ? <Button style={{backgroundColor: '#0353a4'}}
-                                          onClick={() => handleEditClick(personData)}>Редактировать</Button> : ''}
+            <Button style={{backgroundColor: '#0353a4'}}
+                    onClick={() => handleEditClick(personData)}>Редактировать</Button>
+            <Button style={{backgroundColor: '#0353a4'}}
+                    onClick={()=>{hide()}}>Скрыть</Button>
         </div>
     );
 }

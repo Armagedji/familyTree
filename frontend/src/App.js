@@ -4,7 +4,7 @@ import axios from "axios";
 import {Routes, Route, Navigate, useNavigate} from "react-router-dom";
 import RegistrationForm from "./components/RegistrationForm";
 import LoginForm from "./components/LoginForm";
-import DefaultLayout from "./components/DefaultLayout";
+import MainPage from "./components/MainPage";
 import {Button, Navbar} from "reactstrap";
 
 
@@ -44,7 +44,7 @@ function App() {
               <Route path="/" element={userId ? <Navigate to='/familytree' replace/> : <Navigate to="/login" replace />}/>
           <Route path="/login" element={<LoginForm userData={handleLogin}/>} />
           <Route path="/register" element={<RegistrationForm userData={handleLogin}/>} />
-          <Route path="/familytree" element={userId ? <DefaultLayout /> : <Navigate to='/login' replace/>} />
+          <Route path="/familytree" element={userId ? <MainPage /> : <Navigate to='/login' replace/>} />
         </Routes>
       </div>
   );

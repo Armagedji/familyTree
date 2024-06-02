@@ -371,8 +371,8 @@ def send_picture(user_id):
 @app.route('/api/register', methods=['POST'])
 def add_user():
     try:
-        data = request.json
-        new_user = User(
+        data = request.json #Получение данных из запроса
+        new_user = User( #Создание нового пользователя благодаря созданной модели
             username=data['username'],
             password=data['password'],
             email=data['email'])
@@ -425,9 +425,9 @@ def set_relationship():
 
 
 @app.route('/api/search/<user_id>/<category>/<query>', methods=['GET'])
-def search_persons(user_id, category, query):
+def search_persons(user_id, category, query): #ID пользователя, категория и запрос
     try:
-        if category == 'name':
+        if category == 'name': #Фильтр для поиска по ФИО
             persons = Person.query.filter(
                 Person.user_id == user_id,
                 (Person.first_name.contains(query)) |
@@ -435,32 +435,30 @@ def search_persons(user_id, category, query):
                 (Person.maiden_name.contains(query)) |
                 (Person.patronymic.contains(query))
             ).all()
-        elif category == 'birth_place':
+        elif category == 'birth_place': #Фильтр для поиска по месту рождения
             persons = Person.query.filter(
                 Person.user_id == user_id,
                 (Person.birth_country.contains(query)) |
                 (Person.birth_city.contains(query)) |
                 (Person.birth_street.contains(query))
             ).all()
-        elif category == 'residences':
+        elif category == 'residences': #Фильтр для поиска по месту жительства
             persons = Person.query.join(Residence).filter(
                 Person.user_id == user_id,
                 (Residence.country.contains(query)) |
                 (Residence.city.contains(query)) |
                 (Residence.street.contains(query))
             ).all()
-        else:
-            return jsonify({'error': 'Неверная категория поиска'}), 400
 
         if not persons:
-            return jsonify({'message': 'Людей по запросу не найдено'})
+            return jsonify({'message': 'Людей по запросу не найдено'}), 400 #Возврат ошибки при отсутствии результатов
 
-        # Сериализация результатов
-        serialized_persons = [person.to_dict() for person in persons]
-        return jsonify(serialized_persons)
+
+        serialized_persons = [person.to_dict() for person in persons] #Сериализация результатов
+        return jsonify(serialized_persons) #Отправка данных на клиент
 
     except Exception as e:
-        return jsonify({'message': 'Произошла ошибка при поиске людей', 'error': str(e)}), 500
+        return jsonify({'message': 'Произошла ошибка при поиске людей', 'error': str(e)}), 500 #Обработка серверной ошибки
 
 
 @app.route('/api/getpersons/<user_id>', methods=['GET'])
